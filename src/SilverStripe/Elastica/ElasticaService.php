@@ -10,6 +10,16 @@ use Elastica\Query;
  */
 class ElasticaService {
 
+	/**
+	 * @var \Elastica\Document[]
+	 */
+	protected $buffer = array();
+
+	/**
+	 * @var bool controls whether indexing operations are buffered or not
+	 */
+	protected $buffered = false;
+
 	private $client;
 	private $index;
 
@@ -52,11 +62,44 @@ class ElasticaService {
 	 * @param Searchable $record
 	 */
 	public function index($record) {
-		$index = $this->getIndex();
-		$type = $index->getType($record->getElasticaType());
+		$document = $record->getElasticaDocument();
+		$type = $record->getElasticaType();
 
-		$type->addDocument($record->getElasticaDocument());
-		$index->refresh();
+		if ($this->buffered) {
+			if (array_key_exists($type, $this->buffer)) {
+				$this->buffer[$type][] = $document;
+			} else {
+				$this->buffer[$type] = array($document);
+			}
+		} else {
+			$index = $this->getIndex();
+
+			$index->getType($type)->addDocument($document);
+			$index->refresh();
+		}
+	}
+
+	/**
+	 * Begins a bulk indexing operation where documents are buffered rather than
+	 * indexed immediately.
+	 */
+	public function startBulkIndex() {
+		$this->buffered = true;
+	}
+
+	/**
+	 * Ends the current bulk index operation and indexes the buffered documents.
+	 */
+	public function endBulkIndex() {
+		$index = $this->getIndex();
+
+		foreach ($this->buffer as $type => $documents) {
+			$index->getType($type)->addDocuments($documents);
+			$index->refresh();
+		}
+
+		$this->buffered = false;
+		$this->buffer = array();
 	}
 
 	/**
@@ -96,17 +139,15 @@ class ElasticaService {
 	 */
 	public function refresh() {
 		$index = $this->getIndex();
+		$this->startBulkIndex();
 
 		foreach ($this->getIndexedClasses() as $class) {
-			$sng = singleton($class);
-			$type = $index->getType($sng->getElasticaType());
-
 			foreach ($class::get() as $record) {
-				$type->addDocument($record->getElasticaDocument());
+				$this->index($record);
 			}
-
-			$index->refresh();
 		}
+
+		$this->endBulkIndex();
 	}
 
 	/**
