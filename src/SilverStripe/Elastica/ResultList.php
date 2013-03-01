@@ -8,7 +8,7 @@ use Elastica\Query;
 /**
  * A list wrapper around the results from a query. Note that not all operations are implemented.
  */
-class ResultList implements \SS_Limitable, \SS_List {
+class ResultList extends \ViewableData implements \SS_Limitable, \SS_List {
 
 	private $index;
 	private $query;
