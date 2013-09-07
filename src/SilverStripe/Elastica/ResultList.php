@@ -56,6 +56,12 @@ class ResultList extends \ViewableData implements \SS_Limitable, \SS_List {
 		return $list;
 	}
 
+	/**
+	 * Converts results of type {@link \Elastica\Result}
+	 * into their respective {@link DataObject} counterparts.
+	 * 
+	 * @return array DataObject[]
+	 */
 	public function toArray() {
 		$result = array();
 
@@ -82,7 +88,10 @@ class ResultList extends \ViewableData implements \SS_Limitable, \SS_List {
 		}
 
 		foreach ($found as $item) {
-			$result[] = $retrieved[$item->getType()][$item->getId()];
+			// Safeguards against indexed items which might no longer be in the DB
+			if(array_key_exists($item->getId(), $retrieved[$item->getType()])) {
+				$result[] = $retrieved[$item->getType()][$item->getId()];
+			}
 		}
 
 		return $result;
