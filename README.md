@@ -10,7 +10,7 @@ The first step is to configure the Elastic Search service. To do this, the confi
 is used. The simplest default configuration is:
 
     Injector:
-      SilverStripe\Elastica\ElasticService:
+      SilverStripe\Elastica\ElasticaService:
         constructor:
           - %$Elastica\Client
           - index-name-to-use
