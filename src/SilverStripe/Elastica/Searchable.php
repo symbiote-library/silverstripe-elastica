@@ -36,8 +36,8 @@ class Searchable extends \DataExtension {
 	 * @return string
 	 */
 	public function getElasticaType() {
-		return $this->ownerBaseClass;
-	}
+		return get_class($this->owner);
+    }
 
 	/**
 	 * Gets an array of elastic field definitions.
