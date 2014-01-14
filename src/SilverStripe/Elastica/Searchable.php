@@ -22,7 +22,8 @@ class Searchable extends \DataExtension {
 		'SS_Datetime' => 'date',
 		'Text'        => 'string',
 		'Varchar'     => 'string',
-		'Year'        => 'integer'
+		'Year'        => 'integer',
+        'Date'        => 'date',
 	);
 
 	private $service;
@@ -45,8 +46,8 @@ class Searchable extends \DataExtension {
 	 * @return array
 	 */
 	public function getElasticaFields() {
-		$db = \DataObject::database_fields(get_class($this->owner));
-		$fields = $this->owner->searchableFields();
+        $db = $this->owner->db();
+		$fields = $this->getAllSearchableFields();
 		$result = array();
 
 		foreach ($fields as $name => $params) {
@@ -76,7 +77,10 @@ class Searchable extends \DataExtension {
 	 */
 	public function getElasticaMapping() {
 		$mapping = new Mapping();
-		$mapping->setProperties($this->getElasticaFields());
+
+        $fields = $this->getElasticaFields();
+
+		$mapping->setProperties($fields);
 
 		return $mapping;
 	}
@@ -104,5 +108,58 @@ class Searchable extends \DataExtension {
 	public function onAfterDelete() {
 		$this->service->remove($this->owner);
 	}
+
+    /**
+     * Return all of the searchable fields defined in $this->owner::$searchable_fields and all the parent classes.
+     *
+     * @return array searchable fields
+     */
+    public function getAllSearchableFields()
+    {
+        $fields = \Config::inst()->get(get_class($this->owner), 'searchable_fields');
+        $labels = $this->owner->fieldLabels();
+
+        // fallback to default method
+        if(!$fields) {
+            return $this->owner->searchableFields();
+        }
+
+        // Copied from DataObject::searchableFields() as there is no separate accessible method
+
+        // rewrite array, if it is using shorthand syntax
+        $rewrite = array();
+        foreach($fields as $name => $specOrName) {
+            $identifer = (is_int($name)) ? $specOrName : $name;
+
+            if(is_int($name)) {
+                // Format: array('MyFieldName')
+                $rewrite[$identifer] = array();
+            } elseif(is_array($specOrName)) {
+                // Format: array('MyFieldName' => array(
+                //   'filter => 'ExactMatchFilter',
+                //   'field' => 'NumericField', // optional
+                //   'title' => 'My Title', // optiona.
+                // ))
+                $rewrite[$identifer] = array_merge(
+                    array('filter' => $this->owner->relObject($identifer)->stat('default_search_filter_class')),
+                    (array)$specOrName
+                );
+            } else {
+                // Format: array('MyFieldName' => 'ExactMatchFilter')
+                $rewrite[$identifer] = array(
+                    'filter' => $specOrName,
+                );
+            }
+            if(!isset($rewrite[$identifer]['title'])) {
+                $rewrite[$identifer]['title'] = (isset($labels[$identifer]))
+                    ? $labels[$identifer] : \FormField::name_to_label($identifer);
+            }
+            if(!isset($rewrite[$identifer]['filter'])) {
+                $rewrite[$identifer]['filter'] = 'PartialMatchFilter';
+            }
+        }
+
+        return $rewrite;
+    }
 
 }

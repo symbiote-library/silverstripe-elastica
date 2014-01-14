@@ -20,7 +20,14 @@ class ElasticaService {
 	 */
 	protected $buffered = false;
 
+    /**
+     * @var \Elastica\Client Elastica Client object
+     */
 	private $client;
+
+    /**
+     * @var string index name
+     */
 	private $index;
 
 	/**
@@ -56,6 +63,39 @@ class ElasticaService {
 		return new ResultList($this->getIndex(), Query::create($query));
 	}
 
+    /**
+     * Ensure that the index is present
+     */
+    protected function ensureIndex()
+    {
+        $index = $this->getIndex();
+        if (!$index->exists())
+        {
+            $index->create();
+        }
+    }
+
+    /**
+     * Ensure that there is a mapping present
+     *
+     * @param \Elastica\Type Type object
+     * @return \Elastica\Mapping Mapping object
+     */
+    protected function ensureMapping(\Elastica\Type $type, \DataObject $record)
+    {
+        try
+        {
+            $mapping = $type->getMapping();
+        }
+        catch(\Elastica\Exception\ResponseException $e)
+        {
+            $this->ensureIndex();
+            $mapping = $record->getElasticaMapping();
+            $type->setMapping($mapping);
+        }
+        return $mapping;
+    }
+
 	/**
 	 * Either creates or updates a record in the index.
 	 *
@@ -63,18 +103,22 @@ class ElasticaService {
 	 */
 	public function index($record) {
 		$document = $record->getElasticaDocument();
-		$type = $record->getElasticaType();
+		$typeName = $record->getElasticaType();
 
 		if ($this->buffered) {
-			if (array_key_exists($type, $this->buffer)) {
-				$this->buffer[$type][] = $document;
+			if (array_key_exists($typeName, $this->buffer)) {
+				$this->buffer[$typeName][] = $document;
 			} else {
-				$this->buffer[$type] = array($document);
+				$this->buffer[$typeName] = array($document);
 			}
 		} else {
 			$index = $this->getIndex();
 
-			$index->getType($type)->addDocument($document);
+            $type = $index->getType($typeName);
+
+            $this->ensureMapping($type, $record);
+
+            $type->addDocument($document);
 			$index->refresh();
 		}
 	}
@@ -120,9 +164,11 @@ class ElasticaService {
 	public function define() {
 		$index = $this->getIndex();
 
-		if (!$index->exists()) {
-			$index->create();
+		# Recreate the index
+        if ($index->exists()) {
+            $index->delete();
 		}
+        $index->create();
 
 		foreach ($this->getIndexedClasses() as $class) {
 			/** @var $sng Searchable */
