@@ -189,7 +189,10 @@ class ElasticaService {
 
 		foreach ($this->getIndexedClasses() as $class) {
 			foreach ($class::get() as $record) {
-				$this->index($record);
+                if ($record->showRecordInSearch())
+                {
+				    $this->index($record);
+                }
 			}
 		}
 

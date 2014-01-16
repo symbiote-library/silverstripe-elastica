@@ -26,6 +26,9 @@ class Searchable extends \DataExtension {
         'Date'        => 'date',
 	);
 
+    /**
+     * @var ElasticaService associated elastica search service
+     */
 	private $service;
 
 	public function __construct(ElasticaService $service) {
@@ -34,7 +37,9 @@ class Searchable extends \DataExtension {
 	}
 
 	/**
-	 * @return string
+	 * Get the elasticsearch type name
+     *
+     * @return string
 	 */
 	public function getElasticaType() {
 		return get_class($this->owner);
@@ -73,7 +78,9 @@ class Searchable extends \DataExtension {
 	}
 
 	/**
-	 * @return \Elastica\Type\Mapping
+	 * Get the elasticsearch mapping for the current document/type
+     *
+     * @return \Elastica\Type\Mapping
 	 */
 	public function getElasticaMapping() {
 		$mapping = new Mapping();
@@ -85,6 +92,11 @@ class Searchable extends \DataExtension {
 		return $mapping;
 	}
 
+    /**
+     * Get an elasticsearch document
+     *
+     * @return \Elastica\Document
+     */
 	public function getElasticaDocument() {
 		$fields = array();
 
@@ -95,19 +107,117 @@ class Searchable extends \DataExtension {
 		return new Document($this->owner->ID, $fields);
 	}
 
-	/**
-	 * Updates the record in the search index.
-	 */
-	public function onAfterWrite() {
-		$this->service->index($this->owner);
-	}
+    /**
+     * Returns whether to include the document into the search index.
+     * All documents are added unless they have a field "ShowInSearch" which is set to false
+     *
+     * @return boolean
+     */
+    public function showRecordInSearch()
+    {
+        return !($this->owner->hasField('ShowInSearch') AND false == $this->owner->ShowInSearch);
+    }
 
-	/**
-	 * Removes the record from the search index.
-	 */
-	public function onAfterDelete() {
-		$this->service->remove($this->owner);
-	}
+
+    /**
+     * Delete the record from the search index if ShowInSearch is deactivated (non-SiteTree).
+     */
+    public function onBeforeWrite() {
+        if (!($this->owner instanceof \SiteTree))
+        {
+            if ($this->owner->hasField('ShowInSearch') AND $this->isChanged('ShowInSearch', 2) AND false == $this->owner->ShowInSearch)
+            {
+                $this->doDeleteDocument();
+            }
+        }
+    }
+
+    /**
+     * Delete the record from the search index if ShowInSearch is deactivated (SiteTree).
+     */
+    public function onBeforePublish() {
+        if (false == $this->owner->ShowInSearch)
+        {
+            if ($this->owner->isPublished())
+            {
+                $liveRecord = \Versioned::get_by_stage(get_class($this->owner), 'Live')->byID($this->owner->ID);
+                if ($liveRecord->ShowInSearch != $this->owner->ShowInSearch)
+                {
+                    $this->doDeleteDocument();
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Updates the record in the search index (non-SiteTree).
+     */
+    public function onAfterWrite() {
+        if (!($this->owner instanceof \SiteTree))
+        {
+            $this->doIndexDocument();
+        }
+    }
+
+    /**
+     * Updates the record in the search index (SiteTree).
+     */
+    public function onAfterPublish() {
+        $this->doIndexDocument();
+    }
+
+    /**
+     * Updates the record in the search index.
+     */
+    protected function doIndexDocument() {
+        if ($this->showRecordInSearch())
+        {
+            $this->service->index($this->owner);
+        }
+    }
+
+
+    /**
+     * Removes the record from the search index (non-SiteTree).
+     */
+    public function onAfterDelete() {
+        if (!($this->owner instanceof \SiteTree))
+        {
+            $this->doDeleteDocumentIfInSearch();
+        }
+    }
+
+    /**
+     * Removes the record from the search index (non-SiteTree).
+     */
+    public function onAfterUnpublish() {
+        $this->doDeleteDocumentIfInSearch();
+    }
+
+    /**
+     * Removes the record from the search index if the "ShowInSearch" attribute is set to true.
+     */
+    protected function doDeleteDocumentIfInSearch() {
+        if ($this->showRecordInSearch())
+        {
+            $this->doDeleteDocument();
+        }
+    }
+
+    /**
+     * Removes the record from the search index.
+     */
+    protected function doDeleteDocument() {
+        try{
+            $this->service->remove($this->owner);
+        }
+        catch(NotFoundException $e)
+        {
+            trigger_error("Deleted document not found in search index.", E_USER_NOTICE);
+        }
+
+    }
 
     /**
      * Return all of the searchable fields defined in $this->owner::$searchable_fields and all the parent classes.
