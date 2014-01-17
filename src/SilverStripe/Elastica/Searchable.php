@@ -13,6 +13,7 @@ class Searchable extends \DataExtension {
 	public static $mappings = array(
 		'Boolean'     => 'boolean',
 		'Decimal'     => 'double',
+        'Currency'    => 'double',
 		'Double'      => 'double',
 		'Enum'        => 'string',
 		'Float'       => 'float',
@@ -24,6 +25,7 @@ class Searchable extends \DataExtension {
 		'Varchar'     => 'string',
 		'Year'        => 'integer',
         'Date'        => 'date',
+        'DBLocale'    => 'string',
 	);
 
     /**
