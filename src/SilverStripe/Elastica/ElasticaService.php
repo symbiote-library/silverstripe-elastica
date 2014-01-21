@@ -79,6 +79,7 @@ class ElasticaService {
      * Ensure that there is a mapping present
      *
      * @param \Elastica\Type Type object
+     * @param \DataObject Data record
      * @return \Elastica\Mapping Mapping object
      */
     protected function ensureMapping(\Elastica\Type $type, \DataObject $record)

@@ -10,7 +10,14 @@ use Elastica\Query;
  */
 class ResultList extends \ViewableData implements \SS_Limitable, \SS_List {
 
-	private $index;
+    /**
+     * @var \Elastica\Index
+     */
+    private $index;
+
+    /**
+     * @var \Elastica\Query
+     */
 	private $query;
 
 	public function __construct(Index $index, Query $query) {
@@ -50,7 +57,7 @@ class ResultList extends \ViewableData implements \SS_Limitable, \SS_List {
 	public function limit($limit, $offset = 0) {
 		$list = clone $this;
 
-		$list->getQuery()->setLimit($limit);
+		$list->getQuery()->setSize($limit);
 		$list->getQuery()->setFrom($offset);
 
 		return $list;
@@ -90,7 +97,9 @@ class ResultList extends \ViewableData implements \SS_Limitable, \SS_List {
 		foreach ($found as $item) {
 			// Safeguards against indexed items which might no longer be in the DB
 			if(array_key_exists($item->getId(), $retrieved[$item->getType()])) {
-				$result[] = $retrieved[$item->getType()][$item->getId()];
+                $data_object = $retrieved[$item->getType()][$item->getId()];
+                $data_object->setElasticaResult($item);
+				$result[] = $data_object;
 			}
 		}
 

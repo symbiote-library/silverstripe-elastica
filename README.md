@@ -15,18 +15,18 @@ is used. The simplest default configuration (i.e. for `mysite/_config/injector.y
           - %$Elastica\Client
           - index-name-to-use
 
-You can then use the `SilverStripe\Elastica\Searchable` extension to add searching functionality
+You can then use the `SilverStripe\Elastica\Searchable` extension to add search functionality
 to your data objects.
 
-You could for example add the following code to `mysite/_config/injector.yml`:
+You could, for example add the following code to `mysite/_config/injector.yml`:
 
     SiteTree:
       extensions:
         - 'SilverStripe\Elastica\Searchable'
 
-Elasticsearch can then be interacted with using the `SilverStripe\Elastica\ElasticService` class.
+Elasticsearch can then be interacted with by using the `SilverStripe\Elastica\ElasticService` class.
 
-To add special fields to the index, just update $searchable_fields for an object:
+To add special fields to the index, just update $searchable_fields of an object:
 
     class SomePage extends Page
     {
@@ -43,4 +43,20 @@ To add special fields to the index, just update $searchable_fields for an object
 After every change to your data model you should execute the `SilverStripe-Elastica-ReindexTask`:
 
     php framework/cli-script.php dev/tasks/SilverStripe-Elastica-ReindexTask
+
+Sometimes you might want to change documents or mappings (eg. for special boosting settings) before they are sent to elasticsearch.
+For that purpose just add some methods to your Classes:
+
+    class SomePage extends Page
+    {
+        public static function updateElasticsearchMapping(\Elastica\Type\Mapping $mapping)
+        {
+            return $mapping;
+        }
+
+        public function updateElasticsearchDocument(\Elastica\Document $document)
+        {
+            return $document;
+        }
+    }
 

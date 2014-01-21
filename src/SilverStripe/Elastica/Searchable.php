@@ -31,20 +31,46 @@ class Searchable extends \DataExtension {
     /**
      * @var ElasticaService associated elastica search service
      */
-	private $service;
+    protected $service;
+
+    /**
+     * @see getElasticaResult
+     * @var \Elastica\Result
+     */
+    protected $elastica_result;
 
 	public function __construct(ElasticaService $service) {
 		$this->service = $service;
 		parent::__construct();
 	}
 
-	/**
-	 * Get the elasticsearch type name
+    /**
+     * Get the elasticsearch type name
      *
      * @return string
-	 */
-	public function getElasticaType() {
-		return get_class($this->owner);
+     */
+    public function getElasticaType() {
+        return get_class($this->owner);
+    }
+
+    /**
+     * If the owner is part of a search result
+     * the raw Elastica search result is returned
+     * if set via setElasticaResult
+     *
+     * @return \Elastica\Result
+     */
+    public function getElasticaResult() {
+        return $this->elastica_result;
+    }
+
+    /**
+     * Set the raw Elastica search result
+     *
+     * @param \Elastica\Result
+     */
+    public function setElasticaResult(\Elastica\Result $result) {
+        $this->elastica_result = $result;
     }
 
 	/**
@@ -91,6 +117,12 @@ class Searchable extends \DataExtension {
 
 		$mapping->setProperties($fields);
 
+        $callable = get_class($this->owner).'::updateElasticsearchMapping';
+        if(is_callable($callable))
+        {
+            $mapping = call_user_func($callable, $mapping);
+        }
+
 		return $mapping;
 	}
 
@@ -106,7 +138,15 @@ class Searchable extends \DataExtension {
 			$fields[$field] = $this->owner->$field;
 		}
 
-		return new Document($this->owner->ID, $fields);
+        $document = new Document($this->owner->ID, $fields);
+
+        $callable = array($this->owner, 'updateElasticsearchDocument');
+        if(is_callable($callable))
+        {
+            $document = call_user_func($callable, $document);
+        }
+
+		return $document;
 	}
 
     /**
