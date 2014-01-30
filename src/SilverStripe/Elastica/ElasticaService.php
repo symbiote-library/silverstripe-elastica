@@ -181,6 +181,69 @@ class ElasticaService {
 		}
 	}
 
+    /**
+     * Refresh a list of records in the index
+     *
+     * @param \DataList $records
+     */
+    protected function refreshRecords($records)
+    {
+        foreach ($records as $record) {
+            if ($record->showRecordInSearch()) {
+                $this->index($record);
+            }
+        }
+
+    }
+
+    /**
+     * Get a List of all records by class. Get the "Live data" If the class has the "Versioned" extension
+     *
+     * @param string $class Class Name
+     * @return \DataObject[] $records
+     */
+    protected function recordsByClassConsiderVersioned($class)
+    {
+        if ($class::has_extension("Versioned")) {
+            $records = \Versioned::get_by_stage($class, 'Live');
+        } else {
+            $records = $class::get();
+        }
+        return $records->toArray();
+    }
+
+    /**
+     * Refresh the records of a given class within the search index
+     *
+     * @param string $class Class Name
+     */
+    protected function refreshClass($class)
+    {
+        $records = $this->recordsByClassConsiderVersioned($class);
+
+        if ($class::has_extension("Translatable")) {
+
+            $original_locale = \Translatable::get_current_locale();
+            $existing_languages = \Translatable::get_existing_content_languages($class);
+
+            if (isset($existing_languages[$original_locale])) {
+                unset($existing_languages[$original_locale]);
+            }
+
+            foreach($existing_languages as $locale => $langName) {
+                \Translatable::set_current_locale($locale);
+                $langRecords = $this->recordsByClassConsiderVersioned($class);
+                foreach ($langRecords as $record)
+                {
+                    $records[] = $record;
+                }
+            }
+            \Translatable::set_current_locale($original_locale);
+        }
+
+        $this->refreshRecords($records);
+    }
+
 	/**
 	 * Re-indexes each record in the index.
 	 */
@@ -189,12 +252,7 @@ class ElasticaService {
 		$this->startBulkIndex();
 
 		foreach ($this->getIndexedClasses() as $class) {
-			foreach ($class::get() as $record) {
-                if ($record->showRecordInSearch())
-                {
-				    $this->index($record);
-                }
-			}
+            $this->refreshClass($class);
 		}
 
 		$this->endBulkIndex();
