@@ -95,7 +95,13 @@ class Searchable extends \DataExtension {
 	 * Updates the record in the search index.
 	 */
 	public function onAfterWrite() {
-		$this->service->index($this->owner);
+		if($this->owner->ShowInSearch && $this->owner->isPublished()) {
+			$this->service->index($this->owner);
+		} else {
+			try {
+				$this->service->remove($this->owner);
+			} catch (\Elastica\Exception\NotFoundException $e) { }
+		}
 	}
 
 	/**
