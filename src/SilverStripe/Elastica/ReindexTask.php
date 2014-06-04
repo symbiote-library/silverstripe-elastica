@@ -25,8 +25,8 @@ class ReindexTask extends \BuildTask {
 			print(\Director::is_cli() ? "$content\n" : "<p>$content</p>");
 		};
 
-		$message('Defining the mappings');
-		$this->service->define();
+		// $message('Defining the mappings');
+		// $this->service->define();
 
 		$message('Refreshing the index');
 		$this->service->refresh();
