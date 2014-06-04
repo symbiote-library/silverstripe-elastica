@@ -12,6 +12,7 @@ class ResultList extends \ViewableData implements \SS_Limitable, \SS_List {
 
 	private $index;
 	private $query;
+	private $search = null;
 
 	public function __construct(Index $index, Query $query) {
 		$this->index = $index;
@@ -37,10 +38,21 @@ class ResultList extends \ViewableData implements \SS_Limitable, \SS_List {
 	}
 
 	/**
+	 * @return Elastica search result (cached)
+	 */
+	public function getSearch() {
+		if(!$this->search) {
+			$this->search = $this->index->search($this->query);
+		}
+
+		return $this->search;
+	}
+
+	/**
 	 * @return array
 	 */
 	public function getResults() {
-		return $this->index->search($this->query)->getResults();
+		return $this->getSearch()->getResults();
 	}
 
 	public function getIterator() {
@@ -143,6 +155,10 @@ class ResultList extends \ViewableData implements \SS_Limitable, \SS_List {
 
 	public function count() {
 		return count($this->toArray());
+	}
+
+	public function getTotalHits() {
+		return $this->getSearch()->getTotalHits();
 	}
 
 	/**
