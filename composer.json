@@ -1,5 +1,5 @@
 {
-	"name": "ajshort/silverstripe-elastica",
+	"name": "silverstripe-australia/elastica",
 	"description": "Provides Elastic Search integration for SilverStripe DataObjects using Elastica",
 	"type": "silverstripe-module",
 	"homepage": "http://github.com/ajshort/silverstripe-elastica",
@@ -9,6 +9,10 @@
 		{
 			"name": "Andrew Short",
 			"email": "andrewjshort@gmail.com"
+		},
+		{
+			"name": "Marcus Nyeholt",
+			"email": "marcus@silverstripe.com.au"
 		}
 	],
 	"support": {
@@ -23,5 +27,8 @@
 	},
 	"extra": {
 		"installer-name": "elastica"
+	},
+	"replace": {
+		"ajshort/silverstripe-elastica": "self.version"
 	}
 }
