@@ -4,6 +4,7 @@ namespace SilverStripe\Elastica;
 
 use Elastica\Client;
 use Elastica\Query;
+use Elastica\Query\MultiMatch;
 
 /**
  * A service used to interact with elastic search.
@@ -50,10 +51,20 @@ class ElasticaService {
 	 * Performs a search query and returns a result list.
 	 *
 	 * @param \Elastica\Query|string|array $query
+	 * @param array $fields An optional list of fields to search
 	 * @return ResultList
 	 */
-	public function search($query) {
-		return new ResultList($this->getIndex(), Query::create($query));
+	public function search($query, $fields = array ()) {
+		if(!empty($fields)) {
+			$q = new MultiMatch();
+			$q->setQuery($query);
+			$q->setFields($fields);
+		}
+		else {
+			$q = Query::create($query);
+		}
+
+		return new ResultList($this->getIndex(), $q);
 	}
 
 	/**
