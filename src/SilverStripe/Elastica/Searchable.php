@@ -84,7 +84,7 @@ class Searchable extends \DataExtension {
 	public function getElasticaDocument() {
 		$fields = array();
 
-		foreach ($this->getElasticaFields() as $field => $config) {
+		foreach ($this->owner->getElasticaFields() as $field => $config) {
 			$fields[$field] = $this->owner->$field;
 		}
 
