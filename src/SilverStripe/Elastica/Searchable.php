@@ -13,6 +13,7 @@ class Searchable extends \DataExtension {
 	public static $mappings = array(
 		'Boolean'     => 'boolean',
 		'Decimal'     => 'double',
+        'Currency'    => 'double',
 		'Double'      => 'double',
 		'Enum'        => 'string',
 		'Float'       => 'float',
@@ -22,22 +23,55 @@ class Searchable extends \DataExtension {
 		'SS_Datetime' => 'date',
 		'Text'        => 'string',
 		'Varchar'     => 'string',
-		'Year'        => 'integer'
+		'Year'        => 'integer',
+        'Date'        => 'date',
+        'DBLocale'    => 'string',
 	);
 
-	private $service;
+    /**
+     * @var ElasticaService associated elastica search service
+     */
+    protected $service;
+
+    /**
+     * @see getElasticaResult
+     * @var \Elastica\Result
+     */
+    protected $elastica_result;
 
 	public function __construct(ElasticaService $service) {
 		$this->service = $service;
 		parent::__construct();
 	}
 
-	/**
-	 * @return string
-	 */
-	public function getElasticaType() {
-		return $this->ownerBaseClass;
-	}
+    /**
+     * Get the elasticsearch type name
+     *
+     * @return string
+     */
+    public function getElasticaType() {
+        return get_class($this->owner);
+    }
+
+    /**
+     * If the owner is part of a search result
+     * the raw Elastica search result is returned
+     * if set via setElasticaResult
+     *
+     * @return \Elastica\Result
+     */
+    public function getElasticaResult() {
+        return $this->elastica_result;
+    }
+
+    /**
+     * Set the raw Elastica search result
+     *
+     * @param \Elastica\Result
+     */
+    public function setElasticaResult(\Elastica\Result $result) {
+        $this->elastica_result = $result;
+    }
 
 	/**
 	 * Gets an array of elastic field definitions.
@@ -45,8 +79,8 @@ class Searchable extends \DataExtension {
 	 * @return array
 	 */
 	public function getElasticaFields() {
-		$db = \DataObject::database_fields(get_class($this->owner));
-		$fields = $this->owner->searchableFields();
+        $db = $this->owner->db();
+		$fields = $this->getAllSearchableFields();
 		$result = array();
 
 		foreach ($fields as $name => $params) {
@@ -72,15 +106,31 @@ class Searchable extends \DataExtension {
 	}
 
 	/**
-	 * @return \Elastica\Type\Mapping
+	 * Get the elasticsearch mapping for the current document/type
+     *
+     * @return \Elastica\Type\Mapping
 	 */
 	public function getElasticaMapping() {
 		$mapping = new Mapping();
-		$mapping->setProperties($this->getElasticaFields());
+
+        $fields = $this->getElasticaFields();
+
+		$mapping->setProperties($fields);
+
+        $callable = get_class($this->owner).'::updateElasticsearchMapping';
+        if(is_callable($callable))
+        {
+            $mapping = call_user_func($callable, $mapping);
+        }
 
 		return $mapping;
 	}
 
+    /**
+     * Get an elasticsearch document
+     *
+     * @return \Elastica\Document
+     */
 	public function getElasticaDocument() {
 		$fields = array();
 
@@ -88,21 +138,180 @@ class Searchable extends \DataExtension {
 			$fields[$field] = $this->owner->$field;
 		}
 
-		return new Document($this->owner->ID, $fields);
+        $document = new Document($this->owner->ID, $fields);
+
+        $callable = array($this->owner, 'updateElasticsearchDocument');
+        if(is_callable($callable))
+        {
+            $document = call_user_func($callable, $document);
+        }
+
+		return $document;
 	}
 
-	/**
-	 * Updates the record in the search index.
-	 */
-	public function onAfterWrite() {
-		$this->service->index($this->owner);
-	}
+    /**
+     * Returns whether to include the document into the search index.
+     * All documents are added unless they have a field "ShowInSearch" which is set to false
+     *
+     * @return boolean
+     */
+    public function showRecordInSearch()
+    {
+        return !($this->owner->hasField('ShowInSearch') AND false == $this->owner->ShowInSearch);
+    }
 
-	/**
-	 * Removes the record from the search index.
-	 */
-	public function onAfterDelete() {
-		$this->service->remove($this->owner);
-	}
+
+    /**
+     * Delete the record from the search index if ShowInSearch is deactivated (non-SiteTree).
+     */
+    public function onBeforeWrite() {
+        if (!($this->owner instanceof \SiteTree))
+        {
+            if ($this->owner->hasField('ShowInSearch') AND $this->isChanged('ShowInSearch', 2) AND false == $this->owner->ShowInSearch)
+            {
+                $this->doDeleteDocument();
+            }
+        }
+    }
+
+    /**
+     * Delete the record from the search index if ShowInSearch is deactivated (SiteTree).
+     */
+    public function onBeforePublish() {
+        if (false == $this->owner->ShowInSearch)
+        {
+            if ($this->owner->isPublished())
+            {
+                $liveRecord = \Versioned::get_by_stage(get_class($this->owner), 'Live')->byID($this->owner->ID);
+                if ($liveRecord->ShowInSearch != $this->owner->ShowInSearch)
+                {
+                    $this->doDeleteDocument();
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Updates the record in the search index (non-SiteTree).
+     */
+    public function onAfterWrite() {
+        if (!($this->owner instanceof \SiteTree))
+        {
+            $this->doIndexDocument();
+        }
+    }
+
+    /**
+     * Updates the record in the search index (SiteTree).
+     */
+    public function onAfterPublish() {
+        $this->doIndexDocument();
+    }
+
+    /**
+     * Updates the record in the search index.
+     */
+    protected function doIndexDocument() {
+        if ($this->showRecordInSearch())
+        {
+            $this->service->index($this->owner);
+        }
+    }
+
+
+    /**
+     * Removes the record from the search index (non-SiteTree).
+     */
+    public function onAfterDelete() {
+        if (!($this->owner instanceof \SiteTree))
+        {
+            $this->doDeleteDocumentIfInSearch();
+        }
+    }
+
+    /**
+     * Removes the record from the search index (non-SiteTree).
+     */
+    public function onAfterUnpublish() {
+        $this->doDeleteDocumentIfInSearch();
+    }
+
+    /**
+     * Removes the record from the search index if the "ShowInSearch" attribute is set to true.
+     */
+    protected function doDeleteDocumentIfInSearch() {
+        if ($this->showRecordInSearch())
+        {
+            $this->doDeleteDocument();
+        }
+    }
+
+    /**
+     * Removes the record from the search index.
+     */
+    protected function doDeleteDocument() {
+        try{
+            $this->service->remove($this->owner);
+        }
+        catch(NotFoundException $e)
+        {
+            trigger_error("Deleted document not found in search index.", E_USER_NOTICE);
+        }
+
+    }
+
+    /**
+     * Return all of the searchable fields defined in $this->owner::$searchable_fields and all the parent classes.
+     *
+     * @return array searchable fields
+     */
+    public function getAllSearchableFields()
+    {
+        $fields = \Config::inst()->get(get_class($this->owner), 'searchable_fields');
+        $labels = $this->owner->fieldLabels();
+
+        // fallback to default method
+        if(!$fields) {
+            return $this->owner->searchableFields();
+        }
+
+        // Copied from DataObject::searchableFields() as there is no separate accessible method
+
+        // rewrite array, if it is using shorthand syntax
+        $rewrite = array();
+        foreach($fields as $name => $specOrName) {
+            $identifer = (is_int($name)) ? $specOrName : $name;
+
+            if(is_int($name)) {
+                // Format: array('MyFieldName')
+                $rewrite[$identifer] = array();
+            } elseif(is_array($specOrName)) {
+                // Format: array('MyFieldName' => array(
+                //   'filter => 'ExactMatchFilter',
+                //   'field' => 'NumericField', // optional
+                //   'title' => 'My Title', // optiona.
+                // ))
+                $rewrite[$identifer] = array_merge(
+                    array('filter' => $this->owner->relObject($identifer)->stat('default_search_filter_class')),
+                    (array)$specOrName
+                );
+            } else {
+                // Format: array('MyFieldName' => 'ExactMatchFilter')
+                $rewrite[$identifer] = array(
+                    'filter' => $specOrName,
+                );
+            }
+            if(!isset($rewrite[$identifer]['title'])) {
+                $rewrite[$identifer]['title'] = (isset($labels[$identifer]))
+                    ? $labels[$identifer] : \FormField::name_to_label($identifer);
+            }
+            if(!isset($rewrite[$identifer]['filter'])) {
+                $rewrite[$identifer]['filter'] = 'PartialMatchFilter';
+            }
+        }
+
+        return $rewrite;
+    }
 
 }
