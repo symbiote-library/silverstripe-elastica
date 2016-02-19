@@ -19,14 +19,17 @@
 		"issues": "http://github.com/ajshort/silverstripe-elastica/issues"
 	},
 	"require": {
-		"ruflin/elastica": "dev-master",
+		"ruflin/elastica": "~3.1",
 		"silverstripe/framework": ">=3.1"
 	},
 	"autoload": {
 		"psr-0": { "SilverStripe\\Elastica": "src/" }
 	},
 	"extra": {
-		"installer-name": "elastica"
+		"installer-name": "elastica",
+		"branch-alias": {
+			"dev-master": "2.0.x-dev"
+		}
 	},
 	"replace": {
 		"ajshort/silverstripe-elastica": "self.version"

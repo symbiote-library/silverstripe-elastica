@@ -1,7 +1,14 @@
 Injector:
   SilverStripe\Elastica\ReindexTask:
     constructor:
-      - %$SilverStripe\Elastica\ElasticaService
+      - %$ElasticaService
+  ElasticClient:
+    class: Elastica\Client
+  ElasticaService:
+    class: SilverStripe\Elastica\ElasticaService
+    constructor:
+      client: %$ElasticClient
+      index: sample-index
   SilverStripe\Elastica\Searchable:
     constructor:
-      - %$SilverStripe\Elastica\ElasticaService
+      service: %$ElasticaService

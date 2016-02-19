@@ -22,7 +22,7 @@ class ElasticaService {
 
 	private $client;
 	private $index;
-
+    
 	/**
 	 * @param \Elastica\Client $client
 	 * @param string $index
@@ -55,14 +55,14 @@ class ElasticaService {
 	public function search($query) {
 		return new ResultList($this->getIndex(), Query::create($query));
 	}
-
+    
 	/**
 	 * Either creates or updates a record in the index.
 	 *
 	 * @param Searchable $record
 	 */
-	public function index($record) {
-		$document = $record->getElasticaDocument();
+	public function index($record, $stage = 'Stage') {
+		$document = $record->getElasticaDocument($stage);
 		$type = $record->getElasticaType();
 
 		if ($this->buffered) {
@@ -107,11 +107,11 @@ class ElasticaService {
 	 *
 	 * @param Searchable $record
 	 */
-	public function remove($record) {
+	public function remove($record, $stage = 'Stage') {
 		$index = $this->getIndex();
 		$type = $index->getType($record->getElasticaType());
 
-		$type->deleteDocument($record->getElasticaDocument());
+		$type->deleteDocument($record->getElasticaDocument($stage));
 	}
 
 	/**
@@ -166,5 +166,5 @@ class ElasticaService {
 
 		return $classes;
 	}
-
+    
 }
