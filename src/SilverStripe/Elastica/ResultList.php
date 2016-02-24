@@ -20,10 +20,15 @@ class ResultList extends \ViewableData implements \SS_Limitable {
     
     /**
      *
-     * @var \Elastica\ResultSet
      */
     protected $results;
 
+    /**
+     *
+     * @var \Elastica\ResultSet
+     */
+    protected $resultSet;
+    
 	public function __construct(Index $index, Query $query) {
 		$this->index = $index;
 		$this->query = $query;
@@ -51,8 +56,10 @@ class ResultList extends \ViewableData implements \SS_Limitable {
 	 * @return \Elastica\ResultSet
 	 */
 	public function getResultSet() {
-		$search = $this->index->search($this->query);
-        return $search;
+        if (!$this->resultSet) {
+            $this->resultSet = $this->index->search($this->query);
+        }
+        return $this->resultSet;
 	}
 
 	public function getIterator() {
