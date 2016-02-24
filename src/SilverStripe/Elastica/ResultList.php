@@ -8,10 +8,21 @@ use Elastica\Query;
 /**
  * A list wrapper around the results from a query. Note that not all operations are implemented.
  */
-class ResultList extends \ViewableData implements \SS_Limitable, \SS_List {
+class ResultList extends \ViewableData implements \SS_Limitable {
 
 	private $index;
 	private $query;
+    
+    
+    protected $dataObjects;
+
+    protected $totalResults  = 0;
+    
+    /**
+     *
+     * @var \Elastica\ResultSet
+     */
+    protected $results;
 
 	public function __construct(Index $index, Query $query) {
 		$this->index = $index;
@@ -37,10 +48,11 @@ class ResultList extends \ViewableData implements \SS_Limitable, \SS_List {
 	}
 
 	/**
-	 * @return array
+	 * @return \Elastica\ResultSet
 	 */
-	public function getResults() {
-		return $this->index->search($this->query)->getResults();
+	public function getResultSet() {
+		$search = $this->index->search($this->query);
+        return $search;
 	}
 
 	public function getIterator() {
@@ -55,45 +67,130 @@ class ResultList extends \ViewableData implements \SS_Limitable, \SS_List {
 
 		return $list;
 	}
-
-	/**
+    
+    public function getTotalResults() {
+		return $this->getResultSet()->getTotalHits();
+	}
+    
+    public function getTimeTaken() {
+        return $this->getResultSet()->getTotalTime();
+    }
+    
+    public function getDataObjects() {
+        return $this->toArrayList();
+    }
+    
+    /**
 	 * Converts results of type {@link \Elastica\Result}
 	 * into their respective {@link DataObject} counterparts.
 	 * 
 	 * @return array DataObject[]
 	 */
-	public function toArray() {
+	public function toArray($evaluatePermissions = false) {
+        if ($this->dataObjects) {
+			return $this->dataObjects;
+        }
+
 		$result = array();
 
 		/** @var $found \Elastica\Result[] */
-		$found = $this->getResults();
+		$found = $this->getResultSet();
 		$needed = array();
 		$retrieved = array();
 
-		foreach ($found as $item) {
-			$type = $item->getType();
+		foreach ($found->getResults() as $item) {
+            $data = $item->getData();
+            
+            $type = isset($data['ClassName']) ? $data['ClassName'] : $item->getType();
+            $bits = explode('_', $item->getId());
+            $id = $item->getId();
+            
+            if (count($bits) == 3) {
+                list($type, $id, $stage) = $bits;
+            } else if (count($bits) == 2) {
+                list($type, $id) = $bits;
+                $stage = \Versioned::current_stage();
+            } else {
+                $stage = \Versioned::current_stage();
+            }
 
-			if (!array_key_exists($type, $needed)) {
-				$needed[$type] = array($item->getId());
-				$retrieved[$type] = array();
-			} else {
-				$needed[$type][] = $item->getId();
-			}
+            if (!$type || !$id) {
+                error_log("Invalid elastic document ID {$item->getId()}");
+                continue;
+            }
+
+            if (strpos($item->getId(), \SolrSearchService::RAW_DATA_KEY) === 0 || !class_exists($type)) {
+                $object = \ArrayData::create($data);
+            } else {
+                // a double sanity check for the stage here. 
+                if ($currentStage = \Versioned::current_stage()) {
+                    if ($currentStage != $stage) {
+                        continue;
+                    }
+                }
+                $object = \DataObject::get_by_id($type, $id);
+            }
+
+            if ($object) {
+                // check that the user has permission
+                if ($item->getScore()) {
+                    $object->SearchScore = $item->getScore();
+                }
+
+                $canAdd = true;
+                if ($evaluatePermissions) {
+                    // check if we've got a way of evaluating perms
+                    if ($object->hasMethod('canView')) {
+                        $canAdd = $object->canView();
+                    }
+                }
+
+                if (!$evaluatePermissions || $canAdd) {
+                    if ($object->hasMethod('canShowInSearch')) {
+                        if ($object->canShowInSearch()) {
+                            $result[] = $object;
+                        }
+                    } else {
+                        $result[] = $object;
+                    }
+                }
+            } else {
+                error_log("Object {$item->getId()} is no longer in the system");
+            }
 		}
+//        
+//        $this->totalResults = $documents->numFound;
+//				
+//				// update the dos with stats about this query
+//				
+//				$this->dataObjects = PaginatedList::create($this->dataObjects);
+//				
+//				$this->dataObjects->setPageLength($this->queryParameters->limit)
+//						->setPageStart($documents->start)
+//						->setTotalItems($documents->numFound)
+//						->setLimitItems(false);
 
-		foreach ($needed as $class => $ids) {
-			foreach ($class::get()->byIDs($ids) as $record) {
-				$retrieved[$class][$record->ID] = $record;
-			}
-		}
+//        if (!array_key_exists($type, $needed)) {
+//            $needed[$type] = array($item->getId());
+//            $retrieved[$type] = array();
+//        } else {
+//            $needed[$type][] = $item->getId();
+//        }
+//
+//		foreach ($needed as $class => $ids) {
+//			foreach ($class::get()->byIDs($ids) as $record) {
+//				$retrieved[$class][$record->ID] = $record;
+//			}
+//		}
+//
+//		foreach ($found as $item) {
+//			// Safeguards against indexed items which might no longer be in the DB
+//			if(array_key_exists($item->getId(), $retrieved[$item->getType()])) {
+//				$result[] = $retrieved[$item->getType()][$item->getId()];
+//			}
+//		}
 
-		foreach ($found as $item) {
-			// Safeguards against indexed items which might no longer be in the DB
-			if(array_key_exists($item->getId(), $retrieved[$item->getType()])) {
-				$result[] = $retrieved[$item->getType()][$item->getId()];
-			}
-		}
-
+        $this->dataObjects = $result;
 		return $result;
 	}
 
@@ -127,7 +224,7 @@ class ResultList extends \ViewableData implements \SS_Limitable, \SS_List {
 		if($col == 'ID') {
 			$ids = array();
 
-			foreach ($this->getResults() as $result) {
+			foreach ($this->getResultSet()->getResults() as $result) {
 				$ids[] = $result->getId();
 			}
 
