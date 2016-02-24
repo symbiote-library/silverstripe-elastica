@@ -176,7 +176,7 @@ class Searchable extends \DataExtension {
 	 * @return 
 	 */
 	function onAfterUnpublish() {
-		$this->searchService->remove($this->owner, 'Live');
+		$this->service->remove($this->owner, 'Live');
         $this->service->index($this->owner, 'Stage');
 	}
 }

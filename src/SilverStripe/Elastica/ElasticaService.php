@@ -65,7 +65,11 @@ class ElasticaService {
 		$document = $record->getElasticaDocument($stage);
 		$type = $record->getElasticaType();
 
-		if ($this->buffered) {
+        $this->indexDocument($document, $type);
+	}
+    
+    public function indexDocument($document, $type) {
+        if ($this->buffered) {
 			if (array_key_exists($type, $this->buffer)) {
 				$this->buffer[$type][] = $document;
 			} else {
@@ -73,11 +77,10 @@ class ElasticaService {
 			}
 		} else {
 			$index = $this->getIndex();
-
 			$index->getType($type)->addDocument($document);
 			$index->refresh();
 		}
-	}
+    }
 
 	/**
 	 * Begins a bulk indexing operation where documents are buffered rather than
@@ -111,7 +114,14 @@ class ElasticaService {
 		$index = $this->getIndex();
 		$type = $index->getType($record->getElasticaType());
 
-		$type->deleteDocument($record->getElasticaDocument($stage));
+        try {
+            $type->deleteDocument($record->getElasticaDocument($stage));
+        } catch (\Exception $ex) {
+            \SS_Log::log($ex, \SS_Log::WARN);
+            return false;
+        }
+        
+        return true;
 	}
 
 	/**
