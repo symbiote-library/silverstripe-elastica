@@ -2,6 +2,7 @@
 
 namespace SilverStripe\Elastica;
 
+use Elastica\Exception\Connection\HttpException;
 use Elastica\Client;
 use Elastica\Query;
 
@@ -22,6 +23,8 @@ class ElasticaService {
 
 	private $client;
 	private $index;
+    
+    protected $connected = true;
     
 	/**
 	 * @param \Elastica\Client $client
@@ -69,6 +72,9 @@ class ElasticaService {
 	}
     
     public function indexDocument($document, $type) {
+        if (!$this->connected) {
+            return;
+        }
         if ($this->buffered) {
 			if (array_key_exists($type, $this->buffer)) {
 				$this->buffer[$type][] = $document;
@@ -77,8 +83,15 @@ class ElasticaService {
 			}
 		} else {
 			$index = $this->getIndex();
-			$index->getType($type)->addDocument($document);
-			$index->refresh();
+            try {
+                $index->getType($type)->addDocument($document);
+                $index->refresh();  
+            } catch (HttpException $ex) {
+                $this->connected = false;
+                
+                // TODO LOG THIS ERROR
+                \SS_Log::log($ex, \SS_Log::ERR);
+            }
 		}
     }
 
@@ -94,12 +107,23 @@ class ElasticaService {
 	 * Ends the current bulk index operation and indexes the buffered documents.
 	 */
 	public function endBulkIndex() {
+        if (!$this->connected) {
+            return;
+        }
+
 		$index = $this->getIndex();
 
-		foreach ($this->buffer as $type => $documents) {
-			$index->getType($type)->addDocuments($documents);
-			$index->refresh();
-		}
+        try {
+            foreach ($this->buffer as $type => $documents) {
+                $index->getType($type)->addDocuments($documents);
+                $index->refresh();
+            }
+        } catch (HttpException $ex) {
+            $this->connected = false;
+
+            // TODO LOG THIS ERROR
+            \SS_Log::log($ex, \SS_Log::ERR);
+        }
 
 		$this->buffered = false;
 		$this->buffer = array();
