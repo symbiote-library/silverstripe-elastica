@@ -124,6 +124,9 @@ class Searchable extends \DataExtension {
         }
 
         $id = get_class($this->owner) . '_' . $this->owner->ID . '_' . $stage;
+        
+        $this->owner->extend('updateSearchableData', $fields);
+        
 		return new Document($id, $fields);
 	}
     
