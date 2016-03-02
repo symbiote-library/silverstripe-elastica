@@ -82,6 +82,14 @@ class Searchable extends \DataExtension {
         
         $result['ClassNameHierarchy'] = array('type' => 'string');
         
+        // fix up dates
+        foreach ($result as $field => $spec) {
+            if ($spec['type'] == 'date') {
+                $spec['format'] = 'yyyy-MM-dd HH:mm:ss';
+                $result[$field] = $spec;
+            }
+        }
+        
 		return $result;
 	}
 
@@ -91,7 +99,7 @@ class Searchable extends \DataExtension {
 	public function getElasticaMapping() {
 		$mapping = new Mapping();
 		$mapping->setProperties($this->getElasticaFields());
-
+        $mapping->setParam('date_detection', false);
 		return $mapping;
 	}
 
