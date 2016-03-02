@@ -84,7 +84,7 @@ class Searchable extends \DataExtension {
         
         // fix up dates
         foreach ($result as $field => $spec) {
-            if ($spec['type'] == 'date') {
+            if (isset($spec['type']) && ($spec['type'] == 'date')) {
                 $spec['format'] = 'yyyy-MM-dd HH:mm:ss';
                 $result[$field] = $spec;
             }
