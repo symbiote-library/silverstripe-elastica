@@ -88,7 +88,7 @@ class ResultList extends \ViewableData implements \SS_Limitable {
 	 *
 	 *	@return PaginatedList
 	 */
-    public function getDataObjects($limit, $start = 0) {
+    public function getDataObjects($limit = 0, $start = 0) {
 
         $pagination = \PaginatedList::create($this->toArrayList())
 			->setPageLength($limit)
