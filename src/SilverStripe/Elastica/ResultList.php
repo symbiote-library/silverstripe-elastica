@@ -69,7 +69,7 @@ class ResultList extends \ViewableData implements \SS_Limitable {
 	public function limit($limit, $offset = 0) {
 		$list = clone $this;
 
-		$list->getQuery()->setLimit($limit);
+		$list->getQuery()->setSize($limit);
 		$list->getQuery()->setFrom($offset);
 
 		return $list;
@@ -82,9 +82,20 @@ class ResultList extends \ViewableData implements \SS_Limitable {
     public function getTimeTaken() {
         return $this->getResultSet()->getTotalTime();
     }
-    
-    public function getDataObjects() {
-        return $this->toArrayList();
+
+	/**
+	 *	The paginated result set that is rendered onto the search page.
+	 *
+	 *	@return PaginatedList
+	 */
+    public function getDataObjects($limit, $start = 0) {
+
+        $pagination = \PaginatedList::create($this->toArrayList())
+			->setPageLength($limit)
+			->setPageStart($start)
+			->setTotalItems($this->getTotalResults())
+			->setLimitItems(true);
+		return $pagination;
     }
     
     /**
