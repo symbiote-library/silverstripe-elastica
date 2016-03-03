@@ -94,7 +94,7 @@ class ResultList extends \ViewableData implements \SS_Limitable {
 			->setPageLength($limit)
 			->setPageStart($start)
 			->setTotalItems($this->getTotalResults())
-			->setLimitItems(true);
+			->setLimitItems(false);
 		return $pagination;
     }
     
