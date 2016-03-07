@@ -78,9 +78,13 @@ class ResultList extends \ViewableData implements \SS_Limitable {
     public function getTotalResults() {
 		return $this->getResultSet()->getTotalHits();
 	}
-    
+
     public function getTimeTaken() {
         return $this->getResultSet()->getTotalTime();
+    }
+
+    public function getAggregations() {
+        return $this->getResultSet()->getAggregations();
     }
 
 	/**
