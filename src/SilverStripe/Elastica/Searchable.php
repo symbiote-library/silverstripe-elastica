@@ -90,6 +90,12 @@ class Searchable extends \DataExtension {
             }
         }
         
+        if (isset($result['Content']) && count($result['Content'])) {
+            $spec = $result['Content'];
+            $spec['store'] = false;
+            $result['Content'] = $spec;
+        }
+        
 		return $result;
 	}
 
