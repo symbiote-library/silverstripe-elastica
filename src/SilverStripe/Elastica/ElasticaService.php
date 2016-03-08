@@ -6,10 +6,26 @@ use Elastica\Exception\Connection\HttpException;
 use Elastica\Client;
 use Elastica\Query;
 
+use Elastica\Type\Mapping;
+
 /**
  * A service used to interact with elastic search.
  */
 class ElasticaService {
+    
+    /**
+     * Custom mapping definitions
+     * 
+     * Format of array(
+     *   'type' => array(
+     *     'FieldA' => array('type' => elastictype, 'etc' => other)
+     *     'FieldB' => array('type' => elastictype, 'etc' => other)
+     *   )
+     * )
+     *
+     * @var array
+     */
+    public $mappings = array();
 
 	/**
 	 * @var \Elastica\Document[]
@@ -21,7 +37,14 @@ class ElasticaService {
 	 */
 	protected $buffered = false;
 
+    /**
+     * @var Elastica\Client
+     */
 	private $client;
+    
+    /**
+     * @var string
+     */
 	private $index;
     
     protected $connected = true;
@@ -123,6 +146,9 @@ class ElasticaService {
 
             // TODO LOG THIS ERROR
             \SS_Log::log($ex, \SS_Log::ERR);
+        } catch (\Elastica\Exception\BulkException $be) {
+            \SS_Log::log($be, \SS_Log::ERR);
+            throw $be;
         }
 
 		$this->buffered = false;
@@ -158,15 +184,39 @@ class ElasticaService {
 			$index->create();
 		}
 
-		foreach ($this->getIndexedClasses() as $class) {
+		$this->createMappings($index);
+	}
+    
+    /**
+     * Define all known mappings
+     */
+    protected function createMappings(\Elastica\Index $index) {
+        foreach ($this->getIndexedClasses() as $class) {
 			/** @var $sng Searchable */
 			$sng = singleton($class);
+            
+            $type = $sng->getElasticaType();
+            if (isset($this->mappings[$type])) {
+                // captured later
+                continue;
+            }
 
 			$mapping = $sng->getElasticaMapping();
-			$mapping->setType($index->getType($sng->getElasticaType()));
+			$mapping->setType($index->getType($type));
 			$mapping->send();
 		}
-	}
+        
+        if ($this->mappings) {
+            foreach ($this->mappings as $type => $fields) {
+                $mapping = new Mapping();
+                $mapping->setProperties($fields);
+                $mapping->setParam('date_detection', false);
+                
+                $mapping->setType($index->getType($type));
+                $mapping->send();
+            }
+        }
+    }
 
 	/**
 	 * Re-indexes each record in the index.

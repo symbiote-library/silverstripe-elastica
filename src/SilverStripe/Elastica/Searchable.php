@@ -11,7 +11,7 @@ use Elastica\Type\Mapping;
 class Searchable extends \DataExtension {
 
 	public static $mappings = array(
-		'Boolean'           => 'boolean',
+		'Boolean'           => 'integer',
 		'Decimal'           => 'double',
 		'Double'            => 'double',
 		'Enum'              => 'string',
@@ -78,7 +78,7 @@ class Searchable extends \DataExtension {
         
         $result['Name'] = array('type' => 'string');
         $result['MenuTitle'] = array('type' => 'string');
-        $result['ShowInSearch'] = array('type' => 'boolean');
+        $result['ShowInSearch'] = array('type' => 'integer');
         
         $result['ClassNameHierarchy'] = array('type' => 'string');
         

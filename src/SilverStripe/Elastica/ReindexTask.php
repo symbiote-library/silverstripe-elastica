@@ -21,15 +21,29 @@ class ReindexTask extends \BuildTask {
 	}
 
 	public function run($request) {
+        if (!(\Permission::check('ADMIN') || \Director::is_cli())) {
+            exit("Invalid");
+        }
+        
 		$message = function ($content) {
 			print(\Director::is_cli() ? "$content\n" : "<p>$content</p>");
 		};
+        
+        if ($request->getVar('rebuild')) {
+            $this->service->getIndex()->delete();
+        }
 
-		$message('Defining the mappings');
+		$message('Defining the mappings (if not already)');
 		$this->service->define();
-
-		$message('Refreshing the index');
-		$this->service->refresh();
+        
+        if ($request->getVar('reindex')) {
+            $message('Refreshing the index');
+            try {
+                $this->service->refresh();
+            } catch (\Exception $ex) {
+                $message("Some failures detected when indexing " . $ex->getMessage());
+            }
+        }
 	}
 
 }
