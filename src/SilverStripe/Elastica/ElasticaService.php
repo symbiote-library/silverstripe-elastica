@@ -229,6 +229,13 @@ class ElasticaService {
 			foreach ($class::get() as $record) {
 				$this->index($record);
 			}
+            
+            if (\Object::has_extension($class, 'Versioned')) {
+                $live = \Versioned::get_by_stage($class, 'Live');
+                foreach ($live as $liveRecord) {
+                    $this->index($record, 'Live');
+                }
+            }
 		}
 
 		$this->endBulkIndex();
