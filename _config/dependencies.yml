@@ -1,3 +1,6 @@
+---
+name: 'elastica'
+---
 Injector:
   SilverStripe\Elastica\ReindexTask:
     constructor:
