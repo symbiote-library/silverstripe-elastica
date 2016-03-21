@@ -9,7 +9,7 @@ use Elastica\Type\Mapping;
  * Adds elastic search integration to a data object.
  */
 class Searchable extends \DataExtension {
-
+    
 	public static $mappings = array(
 		'Boolean'           => 'integer',
 		'Decimal'           => 'double',
@@ -169,6 +169,9 @@ class Searchable extends \DataExtension {
 	 * Updates the record in the search index.
 	 */
 	public function onAfterWrite() {
+        if (\Config::inst()->get('ElasticSearch', 'disabled')) {
+            return;
+        }
         $stage = \Versioned::current_stage();
         
 		$this->service->index($this->owner, $stage);
@@ -178,11 +181,19 @@ class Searchable extends \DataExtension {
 	 * Removes the record from the search index.
 	 */
 	public function onAfterDelete() {
+        if (\Config::inst()->get('ElasticSearch', 'disabled')) {
+            return;
+        }
+        
         $stage = \Versioned::current_stage();
 		$this->service->remove($this->owner, $stage);
 	}
     
     public function onAfterPublish() {
+        if (\Config::inst()->get('ElasticSearch', 'disabled')) {
+            return;
+        }
+        
         $this->service->index($this->owner, 'Live');
     }
     
@@ -193,6 +204,10 @@ class Searchable extends \DataExtension {
 	 * @return 
 	 */
 	function onAfterUnpublish() {
+        if (\Config::inst()->get('ElasticSearch', 'disabled')) {
+            return;
+        }
+        
 		$this->service->remove($this->owner, 'Live');
         $this->service->index($this->owner, 'Stage');
 	}
