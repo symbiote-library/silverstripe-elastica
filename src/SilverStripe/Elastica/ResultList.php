@@ -12,12 +12,12 @@ class ResultList extends \ViewableData implements \SS_Limitable {
 
 	private $index;
 	private $query;
-    
-    
+
+
     protected $dataObjects;
 
     protected $totalResults  = 0;
-    
+
     /**
      *
      */
@@ -28,7 +28,7 @@ class ResultList extends \ViewableData implements \SS_Limitable {
      * @var \Elastica\ResultSet
      */
     protected $resultSet;
-    
+
 	public function __construct(Index $index, Query $query) {
 		$this->index = $index;
 		$this->query = $query;
@@ -74,7 +74,7 @@ class ResultList extends \ViewableData implements \SS_Limitable {
 
 		return $list;
 	}
-    
+
     public function getTotalResults() {
 		return $this->getResultSet()->getTotalHits();
 	}
@@ -101,11 +101,11 @@ class ResultList extends \ViewableData implements \SS_Limitable {
 			->setLimitItems(false);
 		return $pagination;
     }
-    
+
     /**
 	 * Converts results of type {@link \Elastica\Result}
 	 * into their respective {@link DataObject} counterparts.
-	 * 
+	 *
 	 * @return array DataObject[]
 	 */
 	public function toArray($evaluatePermissions = false) {
@@ -122,11 +122,11 @@ class ResultList extends \ViewableData implements \SS_Limitable {
 
 		foreach ($found->getResults() as $item) {
             $data = $item->getData();
-            
+
             $type = isset($data['ClassName']) ? $data['ClassName'] : $item->getType();
             $bits = explode('_', $item->getId());
             $id = $item->getId();
-            
+
             if (count($bits) == 3) {
                 list($type, $id, $stage) = $bits;
             } else if (count($bits) == 2) {
@@ -141,17 +141,14 @@ class ResultList extends \ViewableData implements \SS_Limitable {
                 continue;
             }
 
-            if (strpos($item->getId(), \SolrSearchService::RAW_DATA_KEY) === 0 || !class_exists($type)) {
-                $object = \ArrayData::create($data);
-            } else {
-                // a double sanity check for the stage here. 
-                if ($currentStage = \Versioned::current_stage()) {
-                    if ($currentStage != $stage) {
-                        continue;
-                    }
-                }
-                $object = \DataObject::get_by_id($type, $id);
-            }
+			// a double sanity check for the stage here.
+			if ($currentStage = \Versioned::current_stage()) {
+				if ($currentStage != $stage) {
+					continue;
+				}
+			}
+
+			$object = \DataObject::get_by_id($type, $id);
 
             if ($object) {
                 // check that the user has permission
