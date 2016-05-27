@@ -95,6 +95,10 @@ class Searchable extends \DataExtension {
             $spec['store'] = false;
             $result['Content'] = $spec;
         }
+        if (method_exists($this->owner, 'updateElasticMappings')) {
+            $this->owner->updateElasticMappings($result);
+        }
+        $this->owner->extend('updateElasticMappings', $result);
         
 		return $result;
 	}
