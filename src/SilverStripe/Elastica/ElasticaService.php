@@ -47,6 +47,8 @@ class ElasticaService {
      */
 	private $index;
     
+    public $enabled = true;
+    
     protected $connected = true;
     
 	/**
@@ -88,6 +90,9 @@ class ElasticaService {
 	 * @param Searchable $record
 	 */
 	public function index($record, $stage = 'Stage') {
+        if (!$this->enabled) {
+            return;
+        }
 		$document = $record->getElasticaDocument($stage);
 		$type = $record->getElasticaType();
 
@@ -95,6 +100,9 @@ class ElasticaService {
 	}
     
     public function indexDocument($document, $type) {
+        if (!$this->enabled) {
+            return;
+        }
         if (!$this->connected) {
             return;
         }

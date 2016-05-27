@@ -29,6 +29,8 @@ class ReindexTask extends \BuildTask {
 			print(\Director::is_cli() ? "$content\n" : "<p>$content</p>");
 		};
         
+        $message("Specify 'rebuild' to delete the index first, and 'reindex' to re-index content items");
+        
         if ($request->getVar('rebuild')) {
             $this->service->getIndex()->delete();
         }
