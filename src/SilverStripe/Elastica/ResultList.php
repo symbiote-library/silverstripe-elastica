@@ -148,7 +148,12 @@ class ResultList extends \ViewableData implements \SS_Limitable {
 				}
 			}
 
-			$object = \DataObject::get_by_id($type, $id);
+            if (class_exists($type)) {
+                $object = \DataObject::get_by_id($type, $id);
+            } else {
+                $object = \ArrayData::create($item->getSource());
+            }
+			
 
             if ($object) {
                 // check that the user has permission
