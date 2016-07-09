@@ -229,12 +229,19 @@ class ElasticaService {
 	/**
 	 * Re-indexes each record in the index.
 	 */
-	public function refresh() {
+	public function refresh($logFunc = null) {
 		$index = $this->getIndex();
-		$this->startBulkIndex();
+        if (!$logFunc) {
+            $logFunc = function ($msg) {
+                
+            };
+        }
 
 		foreach ($this->getIndexedClasses() as $class) {
+            $logFunc("Indexing items of type $class");
+            $this->startBulkIndex();
 			foreach ($class::get() as $record) {
+                $logFunc("Indexing " . $record->Title);
 				$this->index($record);
 			}
             
@@ -244,9 +251,9 @@ class ElasticaService {
                     $this->index($record, 'Live');
                 }
             }
+            $this->endBulkIndex();
 		}
-
-		$this->endBulkIndex();
+		
 	}
 
 	/**
