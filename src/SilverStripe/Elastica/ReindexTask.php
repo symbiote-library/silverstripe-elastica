@@ -41,7 +41,7 @@ class ReindexTask extends \BuildTask {
         if ($request->getVar('reindex')) {
             $message('Refreshing the index');
             try {
-                $this->service->refresh();
+                $this->service->refresh($message);
             } catch (\Exception $ex) {
                 $message("Some failures detected when indexing " . $ex->getMessage());
             }
