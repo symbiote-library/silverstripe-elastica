@@ -80,6 +80,7 @@ class Searchable extends \DataExtension {
         $result['MenuTitle'] = array('type' => 'string');
         $result['ShowInSearch'] = array('type' => 'integer');
         
+        $result['ClassName'] = array('type' => 'string');
         $result['ClassNameHierarchy'] = array('type' => 'string');
         
         // fix up dates
@@ -139,6 +140,10 @@ class Searchable extends \DataExtension {
                 $classes = array($this->owner->class);
             }
             $fields['ClassNameHierarchy'] = $classes;
+        }
+        
+        if (!isset($fields['ClassName'])) {
+            $fields['ClassName'] = $this->owner->class;
         }
 
         $id = get_class($this->owner) . '_' . $this->owner->ID . '_' . $stage;
