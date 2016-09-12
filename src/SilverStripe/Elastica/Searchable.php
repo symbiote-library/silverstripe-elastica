@@ -173,6 +173,21 @@ class Searchable extends \DataExtension {
         }
         return $parents;
 	}
+    
+    /**
+     * Can this item be shown in a search result? 
+     * 
+     * Allows a base type to override impl
+     * 
+     * @return boolean
+     */
+    public function canShowInSearch() {
+		if ($this->owner->hasField('ShowInSearch')) {
+			return $this->owner->ShowInSearch;
+		}
+		
+		return true;
+	}
 
 	/**
 	 * Updates the record in the search index.
