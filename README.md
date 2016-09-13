@@ -15,6 +15,6 @@ is used. The simplest default configuration is:
           - %$Elastica\Client
           - index-name-to-use
 
-You cna then use the `SilverStripe\Elastica\Searchable` extension to add searching functionality
+You can then use the `SilverStripe\Elastica\Searchable` extension to add searching functionality
 to your data objects. Elastic search can then be interacted with using the
 `SilverStripe\Elastica\ElasticService` class.
