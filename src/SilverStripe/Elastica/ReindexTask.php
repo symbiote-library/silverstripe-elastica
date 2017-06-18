@@ -1,6 +1,6 @@
 <?php
 
-namespace SilverStripe\Elastica;
+namespace Symbiote\Elastica;
 
 /**
  * Defines and refreshes the elastic search index.

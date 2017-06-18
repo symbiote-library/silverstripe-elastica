@@ -1,6 +1,6 @@
 <?php
 
-namespace SilverStripe\Elastica;
+namespace Symbiote\Elastica;
 
 use Elastica\Exception\Connection\HttpException;
 use Elastica\Client;
@@ -266,7 +266,7 @@ class ElasticaService {
 		$classes = array();
 
 		foreach (\ClassInfo::subclassesFor('DataObject') as $candidate) {
-			if (singleton($candidate)->hasExtension('SilverStripe\\Elastica\\Searchable')) {
+			if (singleton($candidate)->hasExtension('Symbiote\\Elastica\\Searchable')) {
 				$classes[] = $candidate;
 			}
 		}

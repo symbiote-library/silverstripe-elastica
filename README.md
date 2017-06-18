@@ -14,11 +14,11 @@ The first step is to configure the Elastic Search service. To do this, the confi
 is used. The simplest default configuration is:
 
     Injector:
-      SilverStripe\Elastica\ElasticaService:
+      Symbiote\Elastica\ElasticaService:
         constructor:
           - %$Elastica\Client
           - index-name-to-use
 
-You can then use the `SilverStripe\Elastica\Searchable` extension to add searching functionality
+You can then use the `Symbiote\Elastica\Searchable` extension to add searching functionality
 to your data objects. Elastic search can then be interacted with using the
-`SilverStripe\Elastica\ElasticService` class.
+`Symbiote\Elastica\ElasticService` class.

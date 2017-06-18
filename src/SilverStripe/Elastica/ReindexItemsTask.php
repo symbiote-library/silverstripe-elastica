@@ -1,6 +1,6 @@
 <?php
 
-namespace SilverStripe\Elastica;
+namespace Symbiote\Elastica;
 
 /**
  * @author marcus

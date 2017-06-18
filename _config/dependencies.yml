@@ -2,16 +2,16 @@
 name: 'elastica'
 ---
 Injector:
-  SilverStripe\Elastica\ReindexTask:
+  Symbiote\Elastica\ReindexTask:
     constructor:
       - %$ElasticaService
   ElasticClient:
     class: Elastica\Client
   ElasticaService:
-    class: SilverStripe\Elastica\ElasticaService
+    class: Symbiote\Elastica\ElasticaService
     constructor:
       client: %$ElasticClient
       index: sample-index
-  SilverStripe\Elastica\Searchable:
+  Symbiote\Elastica\Searchable:
     constructor:
       service: %$ElasticaService

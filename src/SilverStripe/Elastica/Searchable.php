@@ -1,6 +1,6 @@
 <?php
 
-namespace SilverStripe\Elastica;
+namespace Symbiote\Elastica;
 
 use Elastica\Document;
 use Elastica\Type\Mapping;
