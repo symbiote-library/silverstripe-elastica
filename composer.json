@@ -1,5 +1,5 @@
 {
-	"name": "silverstripe-australia/elastica",
+	"name": "symbiote-library/silverstripe-elastica",
 	"description": "Provides Elastic Search integration for SilverStripe DataObjects using Elastica",
 	"type": "silverstripe-module",
 	"homepage": "http://github.com/ajshort/silverstripe-elastica",
