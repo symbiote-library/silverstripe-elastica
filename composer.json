@@ -32,6 +32,7 @@
 		}
 	},
 	"replace": {
-		"ajshort/silverstripe-elastica": "self.version"
+		"ajshort/silverstripe-elastica": "self.version",
+		"silverstripe-australia/elastica": "self.version"
 	}
 }
