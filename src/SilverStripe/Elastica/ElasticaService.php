@@ -5,6 +5,7 @@ namespace Symbiote\Elastica;
 use Elastica\Exception\Connection\HttpException;
 use Elastica\Client;
 use Elastica\Query;
+use Elastica\Query\MultiMatch;
 
 use Elastica\Type\Mapping;
 
@@ -78,10 +79,20 @@ class ElasticaService {
 	 * Performs a search query and returns a result list.
 	 *
 	 * @param \Elastica\Query|string|array $query
+	 * @param array $fields An optional list of fields to search
 	 * @return ResultList
 	 */
-	public function search($query) {
-		return new ResultList($this->getIndex(), Query::create($query));
+	public function search($query, $fields = array ()) {
+		if(!empty($fields)) {
+			$q = new MultiMatch();
+			$q->setQuery($query);
+			$q->setFields($fields);
+		}
+		else {
+			$q = Query::create($query);
+		}
+
+		return new ResultList($this->getIndex(), $q);
 	}
     
 	/**
