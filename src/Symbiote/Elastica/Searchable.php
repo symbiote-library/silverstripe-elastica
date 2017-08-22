@@ -37,8 +37,12 @@ class Searchable extends \DataExtension {
 	 * @return string
 	 */
 	public function getElasticaType() {
-		return $this->ownerBaseClass;
+		return str_replace('\\', '_', $this->ownerBaseClass);
 	}
+
+    public function autoIndex() {
+        return true;
+    }
 
 	/**
 	 * Gets an array of elastic field definitions.
@@ -90,7 +94,7 @@ class Searchable extends \DataExtension {
                 $result[$field] = $spec;
             }
         }
-        
+
         if (isset($result['Content']) && count($result['Content'])) {
             $spec = $result['Content'];
             $spec['store'] = false;
@@ -122,8 +126,9 @@ class Searchable extends \DataExtension {
                 $fields[$field] = $this->owner->$field;
             }
 		}
-        
-        if ($this->owner->hasExtension('Versioned')) {
+
+        // is versioned, or has VersionedDataObject extension
+        if ($this->owner->hasExtension('Versioned') || $this->owner->hasMethod('getCMSPublishedState')) {
             // add in the specific stage(s) 
             $fields['SS_Stage'] = array($stage);
         } else {
@@ -133,7 +138,7 @@ class Searchable extends \DataExtension {
         if ($this->owner->hasExtension('Hierarchy') || $this->owner->hasField('ParentID')) {
             $fields['ParentsHierarchy'] = $this->getParentsHierarchyField();
         }
-        
+
         if (!isset($fields['ClassNameHierarchy'])) {
             $classes = array_values(\ClassInfo::ancestry($this->owner->class));
             if (!$classes) {
@@ -146,7 +151,7 @@ class Searchable extends \DataExtension {
             $fields['ClassName'] = $this->owner->class;
         }
 
-        $id = get_class($this->owner) . '_' . $this->owner->ID . '_' . $stage;
+        $id = $this->owner->getElasticaType() . '_' . $this->owner->ID . '_' . $stage;
         
         $this->owner->extend('updateSearchableData', $fields);
         
@@ -193,7 +198,7 @@ class Searchable extends \DataExtension {
 	 * Updates the record in the search index.
 	 */
 	public function onAfterWrite() {
-        if (\Config::inst()->get('ElasticSearch', 'disabled')) {
+        if (\Config::inst()->get('ElasticSearch', 'disabled') || !$this->owner->autoIndex()) {
             return;
         }
         $stage = \Versioned::current_stage();
@@ -214,7 +219,7 @@ class Searchable extends \DataExtension {
 	}
     
     public function onAfterPublish() {
-        if (\Config::inst()->get('ElasticSearch', 'disabled')) {
+        if (\Config::inst()->get('ElasticSearch', 'disabled') || !$this->owner->autoIndex()) {
             return;
         }
         
