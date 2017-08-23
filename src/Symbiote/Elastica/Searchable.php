@@ -100,10 +100,7 @@ class Searchable extends \DataExtension {
             $spec['store'] = false;
             $result['Content'] = $spec;
         }
-        if (method_exists($this->owner, 'updateElasticMappings')) {
-            $this->owner->updateElasticMappings($result);
-        }
-        $this->owner->extend('updateElasticMappings', $result);
+        $this->owner->invokeWithExtensions('updateElasticMappings', $result);
         
 		return $result;
 	}
@@ -124,7 +121,7 @@ class Searchable extends \DataExtension {
 		foreach ($this->owner->getElasticaFields() as $field => $config) {
             if ($this->owner->hasField($field)) {
                 $fields[$field] = $this->owner->$field;
-            }
+            } 
 		}
 
         // is versioned, or has VersionedDataObject extension
@@ -153,7 +150,7 @@ class Searchable extends \DataExtension {
 
         $id = $this->owner->getElasticaType() . '_' . $this->owner->ID . '_' . $stage;
         
-        $this->owner->extend('updateSearchableData', $fields);
+        $this->owner->invokeWithExtensions('updateSearchableData', $fields);
         
 		return new Document($id, $fields);
 	}
