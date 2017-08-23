@@ -125,7 +125,7 @@ class ResultList extends \ViewableData implements \SS_Limitable {
 
             $type = isset($data['ClassName']) ? $data['ClassName'] : $item->getType();
             $bits = explode('_', $item->getId());
-            $id = $item->getId();
+            $id = isset($data['ID']) ? $data['ID'] : $item->getId();
 
             if (count($bits) == 3) {
                 list($type, $id, $stage) = $bits;
