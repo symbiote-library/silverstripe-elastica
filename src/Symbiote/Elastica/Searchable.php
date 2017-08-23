@@ -36,8 +36,8 @@ class Searchable extends \DataExtension {
 	/**
 	 * @return string
 	 */
-	public function getElasticaType() {
-		return str_replace('\\', '_', $this->ownerBaseClass);
+	public function getElasticaType($input = null) {
+		return str_replace('\\', '_', $input ? $input : $this->ownerBaseClass);
 	}
 
     public function autoIndex() {
@@ -141,6 +141,10 @@ class Searchable extends \DataExtension {
             if (!$classes) {
                 $classes = array($this->owner->class);
             }
+            $self = $this;
+            $classes = array_map(function ($item) use ($self) {
+                return $self->getElasticaType($item);
+            }, $classes);
             $fields['ClassNameHierarchy'] = $classes;
         }
         
@@ -152,7 +156,7 @@ class Searchable extends \DataExtension {
         
         $this->owner->invokeWithExtensions('updateSearchableData', $fields);
         
-		return new Document($id, $fields);
+		return new Document($id, $fields->getArrayCopy());
 	}
     
     /**
