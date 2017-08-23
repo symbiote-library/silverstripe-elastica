@@ -52,7 +52,7 @@ class Searchable extends \DataExtension {
 	public function getElasticaFields() {
 		$db = \DataObject::database_fields(get_class($this->owner));
 		$fields = $this->owner->searchableFields();
-		$result = array();
+		$result = new \ArrayObject();
 
 		foreach ($fields as $name => $params) {
 			$type = null;
@@ -116,7 +116,7 @@ class Searchable extends \DataExtension {
 	}
 
 	public function getElasticaDocument($stage = 'Stage') {
-		$fields = array();
+		$fields = new \ArrayObject();
 
 		foreach ($this->owner->getElasticaFields() as $field => $config) {
             if ($this->owner->hasField($field)) {
