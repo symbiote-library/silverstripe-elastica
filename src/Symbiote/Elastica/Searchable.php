@@ -102,7 +102,7 @@ class Searchable extends \DataExtension {
         }
         $this->owner->invokeWithExtensions('updateElasticMappings', $result);
         
-		return $result;
+		return $result->getArrayCopy();
 	}
 
 	/**
