@@ -86,7 +86,11 @@ class Searchable extends \DataExtension {
         
         $result['ClassName'] = array('type' => 'string');
         $result['ClassNameHierarchy'] = array('type' => 'string');
-        
+
+        $result['SS_Stage'] = array('type' => 'keyword');
+
+        $result['PublicView'] = array('type' => 'boolean');
+
         // fix up dates
         foreach ($result as $field => $spec) {
             if (isset($spec['type']) && ($spec['type'] == 'date')) {
@@ -132,6 +136,8 @@ class Searchable extends \DataExtension {
             $fields['SS_Stage'] = array('Live', 'Stage');
         }
         
+        $fields['PublicView'] = $this->owner->canView(\Member::create());
+
         if ($this->owner->hasExtension('Hierarchy') || $this->owner->hasField('ParentID')) {
             $fields['ParentsHierarchy'] = $this->getParentsHierarchyField();
         }
