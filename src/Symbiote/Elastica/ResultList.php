@@ -2,7 +2,6 @@
 
 namespace Symbiote\Elastica;
 
-use Elastica\Index;
 use Elastica\Query;
 
 /**
@@ -10,7 +9,16 @@ use Elastica\Query;
  */
 class ResultList extends \ViewableData implements \SS_Limitable {
 
+    /**
+     *
+     * @var \Elastica\Index
+     */
 	private $index;
+
+    /**
+     *
+     * @var \Elastica\Query
+     */
 	private $query;
 
 
@@ -29,7 +37,7 @@ class ResultList extends \ViewableData implements \SS_Limitable {
      */
     protected $resultSet;
 
-	public function __construct(Index $index, Query $query) {
+	public function __construct(/*Index */$index, Query $query) {
 		$this->index = $index;
 		$this->query = $query;
 	}
