@@ -192,7 +192,11 @@ class ElasticaService {
 			$index->create();
 		}
 
-		$this->createMappings($index);
+        try {
+            $this->createMappings($index);
+        } catch (\Elastica\Exception\ResponseException $ex) {
+            \SS_Log::log($ex, \SS_Log::WARN);
+        }
 	}
     
     /**
