@@ -3,6 +3,7 @@
 namespace Symbiote\Elastica;
 
 use Elastica\Exception\Connection\HttpException;
+use Elastica\Exception\ResponseException;
 use Elastica\Client;
 use Elastica\Query;
 
@@ -122,6 +123,12 @@ class ElasticaService {
                 
                 // TODO LOG THIS ERROR
                 \SS_Log::log($ex, \SS_Log::ERR);
+            } catch (ResponseException $re) {
+                // if it's a failure to parse, we can continue
+                \SS_Log::log($re, \SS_Log::ERR);
+                if (strpos($re->getMessage(), 'failed to parse') === false) {
+                    throw $re;
+                }
             }
 		}
     }
