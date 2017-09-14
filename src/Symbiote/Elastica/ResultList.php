@@ -113,10 +113,15 @@ class ResultList extends \ViewableData implements \SS_Limitable {
     /**
 	 * Converts results of type {@link \Elastica\Result}
 	 * into their respective {@link DataObject} counterparts.
+     *
+     * @param boolean $evaluatePermissions
+     *          Should we eval permissions now?
+     * @param boolean $loadDataObjects
+     *          Should data objects be loaded from the DB ?
 	 *
 	 * @return array DataObject[]
 	 */
-	public function toArray($evaluatePermissions = false) {
+	public function toArray($evaluatePermissions = false, $loadDataObjects = true) {
         if ($this->dataObjects) {
 			return $this->dataObjects;
         }
@@ -156,7 +161,7 @@ class ResultList extends \ViewableData implements \SS_Limitable {
 				}
 			}
 
-            if (class_exists($type)) {
+            if (class_exists($type) && $loadDataObjects) {
                 $object = \DataObject::get_by_id($type, $id);
             } else {
                 $object = \ArrayData::create($item->getSource());
