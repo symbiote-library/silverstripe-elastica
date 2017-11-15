@@ -91,6 +91,10 @@ class Searchable extends \DataExtension {
 
         $result['PublicView'] = array('type' => 'boolean');
 
+        if ($this->owner->hasExtension('Hierarchy') || $this->owner->hasField('ParentID')) {
+            $result['ParentsHierarchy'] = array('type' => 'long',);
+        }
+
         // fix up dates
         foreach ($result as $field => $spec) {
             if (isset($spec['type']) && ($spec['type'] == 'date')) {
@@ -176,7 +180,7 @@ class Searchable extends \DataExtension {
 
         $parent = $this->owner;
         while ($parent && $parent->ParentID) {
-            $parents[] = $parent->ParentID;
+            $parents[] = (int) $parent->ParentID;
             $parent = $parent->Parent();
             // fix for odd behaviour - in some instance a node is being assigned as its own parent. 
             if ($parent->ParentID == $parent->ID) {
