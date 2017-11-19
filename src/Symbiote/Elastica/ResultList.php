@@ -155,8 +155,10 @@ class ResultList extends \ViewableData implements \SS_Limitable {
             }
 
 			// a double sanity check for the stage here.
+            $source = $item->getSource();
+            $stages = isset($source['SS_Stage']) ? $source['SS_Stage'] : [];
 			if ($currentStage = \Versioned::current_stage()) {
-				if ($currentStage != $stage) {
+				if ($currentStage != $stage && !in_array($currentStage, $stages)) {
 					continue;
 				}
 			}
@@ -164,7 +166,7 @@ class ResultList extends \ViewableData implements \SS_Limitable {
             if (class_exists($type) && $loadDataObjects) {
                 $object = \DataObject::get_by_id($type, $id);
             } else {
-                $object = \ArrayData::create($item->getSource());
+                $object = \ArrayData::create($source);
             }
 			
 
