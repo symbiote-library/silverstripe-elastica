@@ -1,17 +1,17 @@
 ---
 name: 'elastica'
 ---
-Injector:
+SilverStripe\Core\Injector\Injector:
   Symbiote\Elastica\ReindexTask:
     constructor:
-      - %$ElasticaService
+      - '%$ElasticaService'
   ElasticClient:
     class: Elastica\Client
   ElasticaService:
     class: Symbiote\Elastica\ElasticaService
     constructor:
-      client: %$ElasticClient
+      client: '%$ElasticClient'
       index: sample-index
   Symbiote\Elastica\Searchable:
     constructor:
-      service: %$ElasticaService
+      service: '%$ElasticaService'

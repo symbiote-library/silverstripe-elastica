@@ -2,23 +2,28 @@
 
 namespace Symbiote\Elastica;
 
+use SilverStripe\Forms\FieldList;
+use SilverStripe\ORM\DataExtension;
+
 /**
- * 
+ *
  *
  * @author marcus
  */
-class DataDiscovery extends \DataExtension
+class DataDiscovery extends DataExtension
 {
     //put your code here
     private static $db = [
         'BoostTerms' => 'MultiValueField',
     ];
 
-    public function updateCMSFields(\FieldList $fields)
+    public function updateCMSFields(FieldList $fields)
     {
-        $fields->addFieldsToTab('Root.Tagging', $mvf = \MultiValueTextField::create('BoostTerms', 'Boost for these keywords'));
+        $fields->addFieldsToTab(
+            'Root.Tagging',
+            $mvf = \MultiValueTextField::create('BoostTerms', 'Boost for these keywords')
+        );
         $mvf->setRightTitle("Enter the word 'important' to boost this item in any search it appears in");
-
     }
 
 

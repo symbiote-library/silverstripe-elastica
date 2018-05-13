@@ -2,32 +2,39 @@
 
 namespace Symbiote\Elastica;
 
+use SilverStripe\Security\Permission;
+use SilverStripe\Control\Director;
+use SilverStripe\Dev\BuildTask;
+
 /**
  * Defines and refreshes the elastic search index.
  */
-class ReindexTask extends \BuildTask {
+class ReindexTask extends BuildTask
+{
 
-	protected $title = 'Elastic Search Reindex';
+    protected $title = 'Elastic Search Reindex';
 
-	protected $description = 'Refreshes the elastic search index';
+    protected $description = 'Refreshes the elastic search index';
 
-	/**
-	 * @var ElasticaService
-	 */
-	private $service;
+    /**
+     * @var ElasticaService
+     */
+    private $service;
 
-	public function __construct(ElasticaService $service) {
-		$this->service = $service;
-	}
+    public function __construct(ElasticaService $service)
+    {
+        $this->service = $service;
+    }
 
-	public function run($request) {
-        if (!(\Permission::check('ADMIN') || \Director::is_cli())) {
+    public function run($request)
+    {
+        if (!(Permission::check('ADMIN') || Director::is_cli())) {
             exit("Invalid");
         }
         
-		$message = function ($content) {
-			print(\Director::is_cli() ? "$content\n" : "<p>$content</p>");
-		};
+        $message = function ($content) {
+            print(Director::is_cli() ? "$content\n" : "<p>$content</p>");
+        };
         
         $message("Specify 'rebuild' to delete the index first, and 'reindex' to re-index content items");
         
@@ -35,8 +42,8 @@ class ReindexTask extends \BuildTask {
             $this->service->getIndex()->delete();
         }
 
-		$message('Defining the mappings (if not already)');
-		$this->service->define();
+        $message('Defining the mappings (if not already)');
+        $this->service->define();
         
         if ($request->getVar('reindex')) {
             $message('Refreshing the index');
@@ -46,6 +53,5 @@ class ReindexTask extends \BuildTask {
                 $message("Some failures detected when indexing " . $ex->getMessage());
             }
         }
-	}
-
+    }
 }
