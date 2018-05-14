@@ -1,7 +1,7 @@
 {
 	"name": "symbiote-library/silverstripe-elastica",
 	"description": "Provides Elastic Search integration for SilverStripe DataObjects using Elastica",
-	"type": "silverstripe-module",
+    "type": "silverstripe-vendormodule",
 	"homepage": "http://github.com/symbiote-library/silverstripe-elastica",
 	"keywords": ["silverstripe", "search", "elasticsearch", "elastica"],
 	"license": "BSD-3-Clause",
@@ -20,7 +20,7 @@
 	},
 	"require": {
 		"ruflin/elastica": "~3.1",
-		"silverstripe/framework": ">=3.1"
+		"silverstripe/framework": "^4"
 	},
 	"autoload": {
 		"psr-0": { "Symbiote\\Elastica": "src/" }
@@ -28,7 +28,7 @@
 	"extra": {
 		"installer-name": "elastica",
 		"branch-alias": {
-			"dev-master": "3.4.x-dev"
+			"dev-master": "4.x-dev"
 		}
 	},
 	"replace": {
